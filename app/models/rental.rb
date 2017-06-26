@@ -3,6 +3,7 @@ class Rental < ApplicationRecord
   validates :start_date, presence: true
   validates :end_date, presence: true
   validates :distance, presence: true
+  validates :deductible_reduction, inclusion: { in: [ true, false ] }
 
   validate :end_after_start
   validate :start_date_cannot_be_in_the_past
@@ -36,7 +37,7 @@ class Rental < ApplicationRecord
       errors.add(:start_date, "is not available")
     elsif start_date.present? && end_date.present? && @dates.include?(end_date)
       errors.add(:end_date, "is not available")
-    elsif start_date.present? && end_date.present? && ( (@dates - (start_date..end_date).to_a ).length != @dates.length )
+    elsif start_date.present? && end_date.present? && ( (@dates - (start_date..end_date).to_a).length != @dates.length )
       errors.add(:start_date,"Dates are not available")
     end
   end

@@ -5,5 +5,5 @@ json.cars do
 end
 
 json.rentals  @rentals.each do |rental|
-  json.extract! rental, :id, :car_id, :start_date, :end_date, :distance
+  json.extract! rental, :id, :car_id, :start_date, :end_date, :distance, :deductible_reduction
 end
