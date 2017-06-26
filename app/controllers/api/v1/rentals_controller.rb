@@ -3,7 +3,6 @@ class Api::V1::RentalsController < Api::V1::BaseController
   def index
     cars = policy_scope(Car)
     @rentals = []
-    @commissions = []
     cars.each do |car|
       car.rentals.each do |rental|
         output = {}
@@ -27,19 +26,43 @@ class Api::V1::RentalsController < Api::V1::BaseController
         end
 
         rental_price = total_daily_amount.reduce(0, :+) + distance * price_per_km
-        output[:price] = rental_price.to_f
         if rental.deductible_reduction
-          output[:options] = {deductible_reduction: (400 * number_of_days).to_f}
+          deductible_reduction = 400 * number_of_days
         else
-          output[:options] = {deductible_reduction: 0}
+          deductible_reduction = 0
         end
 
-        commissions_hash = {}
-        commissions_hash[:insurance_fee] = (0.3 * rental_price / 2).to_f
-        commissions_hash[:assistance_fee] = (number_of_days * 100).to_f
-        commissions_hash[:drivy_fee] = (commissions_hash[:insurance_fee] - commissions_hash[:assistance_fee]).to_f
+        owner_fee = (0.7 * rental_price).to_f
+        insurance_fee = (0.3 * rental_price / 2).to_f
+        assistance_fee = (number_of_days * 100).to_f
 
-        output[:commission] = commissions_hash
+        output[:actions]= [
+          {
+            "who": "driver",
+            "type": "debit",
+            "amount": (rental_price + deductible_reduction).to_f
+          },
+          {
+            "who": "owner",
+            "type": "credit",
+            "amount": owner_fee
+          },
+          {
+            "who": "insurance",
+            "type": "credit",
+            "amount": insurance_fee
+          },
+          {
+            "who": "assistance",
+            "type": "credit",
+            "amount": assistance_fee
+          },
+          {
+            "who": "drivy",
+            "type": "credit",
+            "amount": (insurance_fee - assistance_fee + deductible_reduction).to_f
+          }
+        ]
         @rentals << output
       end
     end
