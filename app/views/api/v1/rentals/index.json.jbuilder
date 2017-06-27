@@ -1,1 +1,1 @@
-json.rentals  @rentals
+json.rental_modifications  @rental_modifications

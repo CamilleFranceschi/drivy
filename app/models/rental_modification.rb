@@ -1,21 +1,31 @@
-class Rental < ApplicationRecord
-  belongs_to :car
-  has_one :rental_modification, dependent: :destroy
-  validates :start_date, presence: true
-  validates :end_date, presence: true
-  validates :distance, presence: true
-  validates :deductible_reduction, inclusion: { in: [ true, false ] }
+class RentalModification < ApplicationRecord
+  belongs_to :rental
+  validates_uniqueness_of :rental_id
 
   validate :end_after_start
+  validate :start_before_end
   validate :start_date_cannot_be_in_the_past
   validate :validate_booking_dates
 
   private
 
   def end_after_start
-    return if end_date.blank? || start_date.blank?
-    if end_date < start_date
+    if end_date && start_date && end_date < start_date
       errors.add(:end_date, "must be after the start date")
+    end
+
+    if end_date && start_date == nil
+      if end_date < Rental.find(rental_id).start_date
+        errors.add(:end_date, "must be after the start date")
+      end
+    end
+  end
+
+  def start_before_end
+    if start_date && end_date == nil
+      if start_date > Rental.find(rental_id).end_date
+        errors.add(:start_date, "must be before the end date")
+      end
     end
   end
 
@@ -26,10 +36,10 @@ class Rental < ApplicationRecord
   end
 
   def validate_booking_dates
-    @rentals = Rental.all
+    @rentals = Rental.all.where.not(id: rental_id)
     @dates = []
     @rentals.each do |rental|
-      if car_id == rental.car.id
+      if Rental.find(rental_id).car_id == rental.car.id
         @dates << (rental.start_date..rental.end_date).to_a
       end
     end
